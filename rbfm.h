@@ -4,11 +4,14 @@
 #include <string>
 #include <vector>
 #include <climits>
-
+#include <iostream>
+#include <cmath>
 #include "../rbf/pfm.h"
 
 using namespace std;
 
+// function declarations
+bool isFieldNull(const void *data, int fields, int i);
 
 // Record ID
 typedef struct
