@@ -11,6 +11,7 @@ typedef unsigned PageNum;
 #include <fstream>
 #include <cstdio>
 #include <sys/stat.h>
+#include <utility>
 using namespace std;
 
 class FileHandle;
@@ -42,7 +43,9 @@ public:
 	unsigned readPageCounter;
 	unsigned writePageCounter;
 	unsigned appendPageCounter;
-	
+    unsigned numPages; 
+    fstream *file;	
+
     FileHandle();                                                    // Default constructor
     ~FileHandle();                                                   // Destructor
 
