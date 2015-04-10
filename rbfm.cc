@@ -47,7 +47,7 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
 
 RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor, const void *data) {
     // Go through all the attributes and print the data
-    int numFields = ceil((double)recordDescriptor.size() / CHAR_BIT);
+    int numFields = recordDescriptor.size();
     for (auto it = recordDescriptor.begin(); it != recordDescriptor.end(); ++it) {
         // test to see if the field is NULL
         int i = it - recordDescriptor.begin();
