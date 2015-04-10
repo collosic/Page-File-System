@@ -6,6 +6,8 @@
 #include <climits>
 #include <iostream>
 #include <cmath>
+#include <vector>
+
 #include "../rbf/pfm.h"
 
 using namespace std;
