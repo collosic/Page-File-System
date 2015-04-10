@@ -47,11 +47,11 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
 
 RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor, const void *data) {
     // Go through all the attributes and print the data
-    int numFields = recordDescriptor.size();
+    int numNullBytes = ceil((double)recordDescriptor.size() / CHAR_BIT);
     for (auto it = recordDescriptor.begin(); it != recordDescriptor.end(); ++it) {
         // test to see if the field is NULL
         int i = it - recordDescriptor.begin();
-        if (isFieldNull(data, numFields, i)) {
+        if (isFieldNull(data, numNullBytes, i)) {
             std::cout << it->name + ": " << "NULL\t";
         } else {
             
@@ -63,9 +63,9 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
 }
 
 
-bool isFieldNull(const void *data, int fields, int i) {
+bool isFieldNull(const void *data, int bytes, int i) {
     // create an bitmaks to test if the field is null
-    char *bitmask = new char[fields * CHAR_BIT];
+    char *bitmask = new char[bytes * CHAR_BIT];
     *bitmask = 0x1;
      
 

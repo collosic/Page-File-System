@@ -14,7 +14,7 @@
 using namespace std;
 
 // function declarations
-bool isFieldNull(const void *data, int fields, int i);
+bool isFieldNull(const void *data, int bytes, int i);
 
 // Record ID
 typedef struct
