@@ -7,6 +7,7 @@
 #include <iostream>
 #include <cmath>
 #include <vector>
+#include <iterator>
 
 #include "../rbf/pfm.h"
 
