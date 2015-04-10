@@ -44,7 +44,8 @@ public:
 	unsigned writePageCounter;
 	unsigned appendPageCounter;
     unsigned numPages; 
-    fstream *file;	
+    ifstream *infile;	
+    ofstream *outfile;
 
     FileHandle();                                                    // Default constructor
     ~FileHandle();                                                   // Destructor
