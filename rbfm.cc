@@ -55,12 +55,15 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
         int i = it - recordDescriptor.begin();
         s += it->name + ": ";
         if (isFieldNull(data, numNullBytes, i)) {
-            s += "NULL\t";
+            s += "NULL ";
         } else {
-            s += extractType((char *)data + offset,  it->type, it->length);
+            AttrType t = it->type;
+            AttrLength l = it->length;
+            s += extractType(data, &offset, t, l); 
         } 
-
+        s += '\t';
     }
+    cout << s << endl;
     return 0;
 }
 
@@ -81,6 +84,33 @@ bool isFieldNull(const void *data, int bytes, int i) {
     return retVal;
 }
 
-std::string extractType(void *data, AttrType t, AttrLength l) {
-    unsigned a = l;
+std::string extractType(const void *data, int *offset, AttrType t, AttrLength l) {
+    if (t == TypeInt) {
+        int value; 
+        memcpy(&value, (char *) data + *offset, sizeof(int));
+        *offset += sizeof(int);
+        return std::to_string(value);
+    } else if (t == TypeReal) {
+        float val;
+        memcpy(&val, (char *) data + *offset, sizeof(float));
+        *offset += sizeof(float);
+        return std::to_string(val);
+    } else if (t == TypeVarChar) {
+        // first extract the length of the char
+        int varCharLength; 
+        memcpy(&varCharLength, (char *) data + *offset, sizeof(int));
+        
+        // now generate a C string with the same length plus 1
+        *offset += sizeof(int);
+        char s[varCharLength + 1];
+        memcpy(&s, (char *) data + *offset, varCharLength);
+
+        std::string str(s);
+        *offset += varCharLength;
+        return str;
+    } else {
+        return "ERROR EXTRACTING"; 
+    }
+
+
 }

@@ -6,6 +6,7 @@
 #include <climits>
 #include <iostream>
 #include <cmath>
+#include <cstring>
 #include <vector>
 #include <iterator>
 #include <stdio.h>
@@ -13,6 +14,9 @@
 #include "../rbf/pfm.h"
 
 using namespace std;
+
+#define INT_SIZE 4
+#define FLOAT_SIZE 4
 
 // Record ID
 typedef struct
@@ -35,7 +39,7 @@ struct Attribute {
 
 // function declarations
 bool isFieldNull(const void *data, int bytes, int i);
-std::string extractType(void *data, AttrType t, AttrLength l);
+std::string extractType(const void *data, int *offset, AttrType t, AttrLength l);
 
 
 // Comparison Operator (NOT needed for part 1 of the project)
