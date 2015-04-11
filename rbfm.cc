@@ -47,15 +47,17 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
 
 RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor, const void *data) {
     // Go through all the attributes and print the data
+    std::string s;
     int numNullBytes = ceil((double)recordDescriptor.size() / CHAR_BIT);
+    int offset = numNullBytes;
     for (auto it = recordDescriptor.begin(); it != recordDescriptor.end(); ++it) {
         // test to see if the field is NULL
         int i = it - recordDescriptor.begin();
+        s += it->name + ": ";
         if (isFieldNull(data, numNullBytes, i)) {
-            std::cout << it->name + ": " << "NULL\t";
+            s += "NULL\t";
         } else {
-            
-
+            s += extractType((char *)data + offset,  it->type, it->length);
         } 
 
     }
@@ -64,10 +66,21 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
 
 
 bool isFieldNull(const void *data, int bytes, int i) {
-    // create an bitmaks to test if the field is null
-    char *bitmask = new char[bytes * CHAR_BIT];
+    // create an bitmask to test if the field is null
+    unsigned char *bitmask = (unsigned char*) malloc(bytes);
     *bitmask = 0x1;
-     
-
+    *bitmask <<= (bytes * CHAR_BIT) - 1;
+    *bitmask >>= i;
+    
+    // extract the NULL fields indicator from the data
+    unsigned char *nullField = (unsigned char*) malloc(bytes);
+    memcpy(nullField, (char *) data, bytes);
+    bool retVal = (*bitmask & *nullField) ? true : false;
+    free(bitmask);
+    free(nullField);
+    return retVal;
 }
 
+std::string extractType(void *data, AttrType t, AttrLength l) {
+    unsigned a = l;
+}

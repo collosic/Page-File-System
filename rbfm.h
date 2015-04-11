@@ -8,13 +8,11 @@
 #include <cmath>
 #include <vector>
 #include <iterator>
+#include <stdio.h>
 
 #include "../rbf/pfm.h"
 
 using namespace std;
-
-// function declarations
-bool isFieldNull(const void *data, int bytes, int i);
 
 // Record ID
 typedef struct
@@ -34,6 +32,11 @@ struct Attribute {
     AttrType type;     // attribute type
     AttrLength length; // attribute length
 };
+
+// function declarations
+bool isFieldNull(const void *data, int bytes, int i);
+std::string extractType(void *data, AttrType t, AttrLength l);
+
 
 // Comparison Operator (NOT needed for part 1 of the project)
 typedef enum { NO_OP = 0,  // no condition
