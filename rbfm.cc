@@ -38,72 +38,58 @@ RC RecordBasedFileManager::closeFile(FileHandle &fileHandle) {
 }
 
 RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Attribute> &recordDescriptor, const void *data, RID &rid) {  
-    // lets check and see if there are any pages in the file
-    int pages = fileHandle.getNumberOfPages();
-    if (pages == 0) {
-        // There's no pages and we need to create the first one and append it
-        fileHandle.currentPage = malloc(PAGE_SIZE);
-        void *newPage = fileHandle.currentPage;
-        memset(newPage, 0, PAGE_SIZE);
-        rid.pageNum = fileHandle.currentPageNum = 0;
-        rid.slotNum = 0;
+    // lets determine if we need to append a new page or just write to a page
+    int length = getRecordSize(data, recordDescriptor);
 
-        // for the next part we only want to know the length of the record and then copy all it's contents over
-        int length = getRecordSize(data, recordDescriptor);
-        setUpNewPage(newPage, data, length);
-        
-        // now lets write the page to the file
-        fileHandle.appendPage(newPage);
-        return 0;
-    } else {
-        // this means we need to find an available slot for the record
-        int length = getRecordSize(data, recordDescriptor);
-        int newOffset = findOpenSlot(fileHandle, length, rid); 
-        if (newOffset == -1) {
-            // first thing we need to do is write the current page to file and free up the memory
+    // findOpenSlot() will search for an open slot in the slot directory 
+    // if it finds one it will update the rid and return the new offset for the record
+    int newOffset = findOpenSlot(fileHandle, length, rid); 
+    if (newOffset == -1) {
+        // first thing we need to do is write the current page to file and free up the memory
+        // only if there is 1 or more pages in the file Handle
+        if (fileHandle.getNumberOfPages() != 0 && fileHandle.currentPage != NULL) {
             if (fileHandle.writePage(fileHandle.getNumberOfPages() - 1, fileHandle.currentPage)) {
                 // error writing to file
                 return -1;
             }
             free(fileHandle.currentPage);
-
-            // we need to append a new page
-            fileHandle.currentPage = malloc(PAGE_SIZE);
-            void *newPage = fileHandle.currentPage;
-            memset(newPage, 0, PAGE_SIZE);
-            
-            // update the RID
-            rid.pageNum = fileHandle.currentPageNum = fileHandle.getNumberOfPages();
-            rid.slotNum = 0;
-            
-            // Now let's add the new record
-            int length = getRecordSize(data, recordDescriptor);
-            setUpNewPage(newPage, data, length);
-            fileHandle.appendPage(newPage);
-            return 0;
-        } else {
-            
-            // copy the record to page and update the meta data
-            memcpy((char *) fileHandle.currentPage + newOffset, (char *) data, length);
-            
-            int numRecords;
-            memcpy(&numRecords, (char *) fileHandle.currentPage + N_OFFSET, sizeof(int));
-            numRecords++;
-            memcpy((char *) fileHandle.currentPage + N_OFFSET, &numRecords, sizeof(int));
-
-            int freeSpace;
-            memcpy(&freeSpace, (char *) fileHandle.currentPage + F_OFFSET, sizeof(int));
-            freeSpace = freeSpace - (length + SLOT_SIZE);
-            memcpy((char *) fileHandle.currentPage + F_OFFSET, &freeSpace, sizeof(int));
-            
-            // now we need to enter in the slot directory entry
-            int slotEntryOffset = N_OFFSET - (numRecords * SLOT_SIZE); 
-            memcpy((char *) fileHandle.currentPage + slotEntryOffset, &newOffset, sizeof(int));
-            memcpy((char *) fileHandle.currentPage + slotEntryOffset + sizeof(int), &length, sizeof(int));
-            
-            return 0; 
         }
+        
+        // we need to append a new page
+        fileHandle.currentPage = malloc(PAGE_SIZE);
+        void *newPage = fileHandle.currentPage;
+        memset(newPage, 0, PAGE_SIZE);
+        
+        // update the RID
+        rid.pageNum = fileHandle.currentPageNum = fileHandle.getNumberOfPages();
+        rid.slotNum = 0;
+        
+        // Now let's add the new record
+        int length = getRecordSize(data, recordDescriptor);
+        setUpNewPage(newPage, data, length);
+        fileHandle.appendPage(newPage);
+        return 0;
+    } else {
+        
+        // copy the record the current page
+        memcpy((char *) fileHandle.currentPage + newOffset, (char *) data, length);
+        
+        // update the number of records and free space
+        int numRecords;
+        memcpy(&numRecords, (char *) fileHandle.currentPage + N_OFFSET, sizeof(int));
+        numRecords++;
+        memcpy((char *) fileHandle.currentPage + N_OFFSET, &numRecords, sizeof(int));
 
+        int freeSpace;
+        memcpy(&freeSpace, (char *) fileHandle.currentPage + F_OFFSET, sizeof(int));
+        freeSpace = freeSpace - (length + SLOT_SIZE);
+        memcpy((char *) fileHandle.currentPage + F_OFFSET, &freeSpace, sizeof(int));
+        
+        // now we need to enter in the slot directory entry
+        int slotEntryOffset = N_OFFSET - (numRecords * SLOT_SIZE); 
+        memcpy((char *) fileHandle.currentPage + slotEntryOffset, &newOffset, sizeof(int));
+        memcpy((char *) fileHandle.currentPage + slotEntryOffset + sizeof(int), &length, sizeof(int));
+        return 0; 
     }
     return -1;
 }
@@ -189,10 +175,9 @@ std::string extractType(const void *data, int *offset, AttrType t, AttrLength l)
         *offset += varCharLength;
         return str;
     } else {
+        // this shouldn't happen since we assume all incoming data is correct
         return "ERROR EXTRACTING"; 
     }
-
-
 }
 
 
@@ -229,6 +214,11 @@ void getSlotFile(int slotNum, const void *page, int *offset, int *length) {
 int findOpenSlot(FileHandle &handle, int size, RID &rid) {
     // first we need to check and see if the current page has available space
     int pageNum = handle.getNumberOfPages() - 1;
+    if (pageNum < 0) {
+        // this means we have no pages in a file and must generate a page
+        return -1;
+    }
+
     // int sizeOfFile = PAGE_SIZE * handle.getNumberOfPages();
     void *page = handle.currentPage; 
     

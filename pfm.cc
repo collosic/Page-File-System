@@ -81,6 +81,8 @@ RC PagedFileManager::closeFile(FileHandle &fileHandle)
         // the file exists and its open
         if (fileHandle.currentPage != NULL) {
             fileHandle.writePage(fileHandle.currentPageNum, fileHandle.currentPage); 
+            fileHandle.currentPage = NULL;
+            fileHandle.currentPageNum = -1;
         }
         fileHandle.infile->close();
         fileHandle.outfile->close();
