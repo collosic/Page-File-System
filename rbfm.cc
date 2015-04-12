@@ -18,6 +18,7 @@ RecordBasedFileManager::RecordBasedFileManager()
 
 RecordBasedFileManager::~RecordBasedFileManager()
 {
+
 }
 
 RC RecordBasedFileManager::createFile(const string &fileName) {
@@ -51,8 +52,6 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
         int length = getRecordSize(data, recordDescriptor);
         setUpNewPage(newPage, data, length);
         
-        char t[length];
-        memcpy(&t, (char *) fileHandle.currentPage, length);
         // now lets write the page to the file
         fileHandle.appendPage(newPage);
         return 0;
@@ -119,8 +118,6 @@ RC RecordBasedFileManager::readRecord(FileHandle &fileHandle, const vector<Attri
 
     void *page = fileHandle.currentPage;
     // we now need to get the page offset and data offset
-    char t[PAGE_SIZE];
-    memcpy(&t, (char *) page, PAGE_SIZE);
 
     int offset;
     int length;
@@ -170,7 +167,7 @@ std::string extractType(const void *data, int *offset, AttrType t, AttrLength l)
         int value; 
         memcpy(&value, (char *) data + *offset, sizeof(int));
         *offset += sizeof(int);
-        return std::to_string(value);
+        return std::to_string((long long) value);
     } else if (t == TypeReal) {
         float val;
         memcpy(&val, (char *) data + *offset, sizeof(float));
@@ -232,7 +229,7 @@ void getSlotFile(int slotNum, const void *page, int *offset, int *length) {
 int findOpenSlot(FileHandle &handle, int size, RID &rid) {
     // first we need to check and see if the current page has available space
     int pageNum = handle.getNumberOfPages() - 1;
-    int sizeOfFile = PAGE_SIZE * handle.getNumberOfPages();
+    // int sizeOfFile = PAGE_SIZE * handle.getNumberOfPages();
     void *page = handle.currentPage; 
     
     int freeSpace;
