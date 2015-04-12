@@ -44,6 +44,8 @@ public:
 	unsigned writePageCounter;
 	unsigned appendPageCounter;
     unsigned numPages; 
+    void *currentPage;
+    unsigned currentPageNum;
     ifstream *infile;	
     ofstream *outfile;
 

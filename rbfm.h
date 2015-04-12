@@ -10,13 +10,17 @@
 #include <vector>
 #include <iterator>
 #include <stdio.h>
+#include <sstream>
+#include <iomanip>
 
 #include "../rbf/pfm.h"
 
 using namespace std;
 
-#define INT_SIZE 4
-#define FLOAT_SIZE 4
+// Constant Vars
+const int F_OFFSET = PAGE_SIZE - sizeof(int);
+const int N_OFFSET = PAGE_SIZE - (2 * sizeof(int));
+const int SLOT_SIZE = 2 * sizeof(int);
 
 // Record ID
 typedef struct
@@ -40,6 +44,11 @@ struct Attribute {
 // function declarations
 bool isFieldNull(const void *data, int bytes, int i);
 std::string extractType(const void *data, int *offset, AttrType t, AttrLength l);
+int getRecordSize(const void *data, const vector<Attribute> &descriptor);
+void getSlotFile(int slotNum, const void *page, int *offset, int *length);
+int findOpenSlot(FileHandle &handle, int size, RID &rid);
+int scanSlotDirectoryForFreeSpace(const void *data, RID &rid);
+void setUpNewPage(const void *newPage, const void *data, int length);
 
 
 // Comparison Operator (NOT needed for part 1 of the project)
