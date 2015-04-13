@@ -12,6 +12,9 @@ typedef unsigned PageNum;
 #include <cstdio>
 #include <sys/stat.h>
 #include <utility>
+#include <vector>
+#include <cstring>
+
 using namespace std;
 
 class FileHandle;
@@ -44,8 +47,9 @@ public:
 	unsigned writePageCounter;
 	unsigned appendPageCounter;
     unsigned numPages; 
-    void *currentPage;
     unsigned currentPageNum;
+    void *currentPage;
+    vector<unsigned int> freeSpace;
     ifstream *infile;	
     ofstream *outfile;
 

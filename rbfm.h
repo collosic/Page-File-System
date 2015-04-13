@@ -48,7 +48,7 @@ int getRecordSize(const void *data, const vector<Attribute> &descriptor);
 void getSlotFile(int slotNum, const void *page, int *offset, int *length);
 int findOpenSlot(FileHandle &handle, int size, RID &rid);
 int scanSlotDirectoryForFreeSpace(const void *data, RID &rid);
-void setUpNewPage(const void *newPage, const void *data, int length);
+void setUpNewPage(const void *newPage, const void *data, int length, FileHandle &handle);
 
 
 // Comparison Operator (NOT needed for part 1 of the project)

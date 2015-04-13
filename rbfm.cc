@@ -66,29 +66,45 @@ RC RecordBasedFileManager::insertRecord(FileHandle &fileHandle, const vector<Att
         
         // Now let's add the new record
         int length = getRecordSize(data, recordDescriptor);
-        setUpNewPage(newPage, data, length);
+        setUpNewPage(newPage, data, length, fileHandle);
         fileHandle.appendPage(newPage);
         return 0;
     } else {
         
-        // copy the record the current page
-        memcpy((char *) fileHandle.currentPage + newOffset, (char *) data, length);
+        // Determin if we will use the current page or a previous page
+        void *page = NULL;
+        if (fileHandle.currentPageNum == rid.pageNum) {
+            page = fileHandle.currentPage;
+        } else {
+            page = malloc(PAGE_SIZE);
+            fileHandle.readPage(rid.pageNum, page);
+        }
+        // move all the data over
+        memcpy((char *) page + newOffset, (char *) data, length);
         
         // update the number of records and free space
         int numRecords;
-        memcpy(&numRecords, (char *) fileHandle.currentPage + N_OFFSET, sizeof(int));
+        memcpy(&numRecords, (char *) page + N_OFFSET, sizeof(int));
         numRecords++;
-        memcpy((char *) fileHandle.currentPage + N_OFFSET, &numRecords, sizeof(int));
+        memcpy((char *) page + N_OFFSET, &numRecords, sizeof(int));
 
         int freeSpace;
-        memcpy(&freeSpace, (char *) fileHandle.currentPage + F_OFFSET, sizeof(int));
+        memcpy(&freeSpace, (char *) page + F_OFFSET, sizeof(int));
         freeSpace = freeSpace - (length + SLOT_SIZE);
-        memcpy((char *) fileHandle.currentPage + F_OFFSET, &freeSpace, sizeof(int));
+        fileHandle.freeSpace[rid.pageNum] = freeSpace;
+        memcpy((char *) page + F_OFFSET, &freeSpace, sizeof(int));
         
         // now we need to enter in the slot directory entry
         int slotEntryOffset = N_OFFSET - (numRecords * SLOT_SIZE); 
-        memcpy((char *) fileHandle.currentPage + slotEntryOffset, &newOffset, sizeof(int));
-        memcpy((char *) fileHandle.currentPage + slotEntryOffset + sizeof(int), &length, sizeof(int));
+        memcpy((char *) page + slotEntryOffset, &newOffset, sizeof(int));
+        memcpy((char *) page + slotEntryOffset + sizeof(int), &length, sizeof(int));
+
+        // if we did not update the current page then we need to write 
+        // the page in context back to file
+        if (fileHandle.currentPageNum != rid.pageNum) {
+            fileHandle.writePage(rid.pageNum, page);
+            free(page);
+        }
         return 0; 
     }
     return -1;
@@ -219,7 +235,6 @@ int findOpenSlot(FileHandle &handle, int size, RID &rid) {
         return -1;
     }
 
-    // int sizeOfFile = PAGE_SIZE * handle.getNumberOfPages();
     void *page = handle.currentPage; 
     
     int freeSpace;
@@ -229,24 +244,30 @@ int findOpenSlot(FileHandle &handle, int size, RID &rid) {
         rid.pageNum = pageNum;
         return scanSlotDirectoryForFreeSpace(page, rid);
     }
-     
-    /*    
-    for (int i = 0; i < (sizeOfFile - 1); i++) {
-        // check each page for available space
-        handle.readPage(i, page);
-        
+    
+    int sizeOfFile = handle.currentPageNum;
+    int retVal = -1;
+    
+    // we only need to test the pages upto the current one, since we already tested it.
+    for (int i = 0; i < sizeOfFile; i++) {
+        //handle.readPage(i, _tempPage);
+         
         // extract the free space and compare to the size of the new record
-        int freeSpace;
-        memcpy(&freeSpace, (char *) page + F_OFFSET, sizeof(int));
-        
+        //memcpy(&freeSpace, (char *) _tempPage + F_OFFSET, sizeof(int));
+        freeSpace = handle.freeSpace[i];
         // if the free space is big enough to accomodate the new record then stick it in.
         if (freeSpace > (size + SLOT_SIZE)) {
+            // open a temp page and scan it for a new offset
+            void *_tempPage = malloc(PAGE_SIZE); 
+            handle.readPage(i, _tempPage);
             rid.pageNum = i;
-            return scanSlotDirectoryForFreeSpace(page, rid);  
+            retVal = scanSlotDirectoryForFreeSpace(_tempPage, rid);  
+            free(_tempPage);
+            break;
         }
-    } */
+    } 
     // if we get here than no space was available and we need to append
-    return -1;
+    return retVal;
 }
 
 
@@ -268,7 +289,7 @@ int scanSlotDirectoryForFreeSpace(const void *data, RID &rid) {
     return newOffset;
 }
 
-void setUpNewPage(const void *newPage, const void *data, int length) {
+void setUpNewPage(const void *newPage, const void *data, int length, FileHandle &handle) {
     // for the next part we only want to know the length of the record and then copy all it's contents over
     memcpy((char *) newPage, (char *) data, length);
         
@@ -287,7 +308,9 @@ void setUpNewPage(const void *newPage, const void *data, int length) {
 
     // now we need to enter in the free space
     int freeSpace = PAGE_SIZE - (length + (numRecords * SLOT_SIZE) + SLOT_SIZE);
+
+    // lets setup the freeSpace list in th fileHandle, we don't need a page number 
+    // because we are making a new page and we just append the end of the list
+    handle.freeSpace.push_back(freeSpace); 
     memcpy((char *) newPage + F_OFFSET, &freeSpace, sizeof(int));
 }
-
-
