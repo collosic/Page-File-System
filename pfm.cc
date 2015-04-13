@@ -52,13 +52,12 @@ RC PagedFileManager::destroyFile(const string &fileName)
 
 RC PagedFileManager::openFile(const string &fileName, FileHandle &fileHandle)
 {
-    ifstream file(fileName);
     // check if the file exists
-    if (file.good() && file.is_open()) {
-        file.close();
-        if(fileHandle.infile != NULL && fileHandle.outfile == NULL) {
+    struct stat buffer;
+    if (stat (fileName.c_str(), &buffer) == 0) {
+        if(fileHandle.infile != NULL && fileHandle.outfile != NULL) {
             // this means the handle is associated with another file
-            return -1; 
+            return 0;
         }
         // link this new file handle to this opened file
         fileHandle.infile = new ifstream(fileName, ios::binary);
@@ -78,9 +77,14 @@ RC PagedFileManager::openFile(const string &fileName, FileHandle &fileHandle)
             for (int i = 0; i < numPages; i++) {
                 // read the page and extract the free space
                 fileHandle.readPage(i, page);
-                int free;
-                memcpy(&free, (char *) page + _offset, sizeof(int));
-                fileHandle.freeSpace.push_back(free); 
+                int freeSpace;
+                memcpy(&freeSpace, (char *) page + _offset, sizeof(int));
+                // if the free space isn't in range then the page isn't formated right
+                if (freeSpace < 0 || freeSpace > PAGE_SIZE) {
+                    free(page);
+                    return 0;
+                }
+                fileHandle.freeSpace.push_back(freeSpace); 
             }
             fileHandle.currentPage = page;
         }            
@@ -127,6 +131,8 @@ FileHandle::FileHandle()
 	writePageCounter = 0;
 	appendPageCounter = 0;
     numPages = 0;
+    infile = NULL;
+    outfile = NULL;
     infile = NULL;
     outfile = NULL;
     currentPage = NULL;
