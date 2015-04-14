@@ -113,7 +113,7 @@ int RBFTest_10(RecordBasedFileManager *rbfm) {
     // Close the file "test9"
     rc = rbfm->closeFile(fileHandle);
     assert(rc == success && "Closing the file should not fail.");
-    
+
     rc = rbfm->destroyFile(fileName);
     assert(rc == success && "Destroying the file should not fail.");
 
