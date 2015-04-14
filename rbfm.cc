@@ -151,8 +151,8 @@ RC RecordBasedFileManager::printRecord(const vector<Attribute> &recordDescriptor
 bool isFieldNull(const void *data, int bytes, int i) {
     // create an bitmask to test if the field is null
     unsigned char *bitmask = (unsigned char*) malloc(bytes);
+    memset(bitmask, 0, bytes);
     *bitmask = 0x1;
-    *bitmask <<= (bytes * CHAR_BIT) - 1;
     *bitmask >>= i;
     
     // extract the NULL fields indicator from the data
