@@ -287,16 +287,6 @@ int getFreeSpaceOffset(const void *data, RID &rid) {
     memcpy(&lastRecordOffset, (char *) data + slotOffset, sizeof(int));
     memcpy(&lengthOfRecord, (char *) data + slotOffset + sizeof(int), sizeof(int)); 
     return lastRecordOffset + lengthOfRecord; 
-    //int slotOffset = PAGE_SIZE - ((numRecords * SLOT_SIZE) + SLOT_SIZE);
-
-    /*
-    for (int i = 0; i < numRecords; i++) {
-        int _temp;
-        memcpy(&_temp, (char *) data + slotOffset + sizeof(int), sizeof(int));
-        newOffset += _temp;
-        slotOffset += SLOT_SIZE;
-    } */
-    //return newOffset;
 }
 
 void setUpNewPage(const void *newPage, const void *data, int length, FileHandle &handle) {
