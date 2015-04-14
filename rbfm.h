@@ -20,7 +20,8 @@ using namespace std;
 // Constant Vars
 const int F_OFFSET = PAGE_SIZE - sizeof(int);
 const int N_OFFSET = PAGE_SIZE - (2 * sizeof(int));
-const int SLOT_SIZE = 2 * sizeof(int);
+const int SLOT_SIZE  = 2 * sizeof(int);
+const int META_INFO = 2 * sizeof(int);
 
 // Record ID
 typedef struct
@@ -47,7 +48,7 @@ std::string extractType(const void *data, int *offset, AttrType t, AttrLength l)
 int getRecordSize(const void *data, const vector<Attribute> &descriptor);
 void getSlotFile(int slotNum, const void *page, int *offset, int *length);
 int findOpenSlot(FileHandle &handle, int size, RID &rid);
-int scanSlotDirectoryForFreeSpace(const void *data, RID &rid);
+int getFreeSpaceOffset(const void *data, RID &rid);
 void setUpNewPage(const void *newPage, const void *data, int length, FileHandle &handle);
 
 

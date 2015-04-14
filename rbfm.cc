@@ -234,7 +234,7 @@ int findOpenSlot(FileHandle &handle, int size, RID &rid) {
         // this means we have no pages in a file and must generate a page
         return -1;
     }
-
+    // if we get here we have a page current page and we need to get its freespace
     void *page = handle.currentPage; 
     
     int freeSpace;
@@ -242,7 +242,7 @@ int findOpenSlot(FileHandle &handle, int size, RID &rid) {
     if (freeSpace > (size + SLOT_SIZE)) {
         // the current page has enough space to fit a new record
         rid.pageNum = pageNum;
-        return scanSlotDirectoryForFreeSpace(page, rid);
+        return getFreeSpaceOffset(page, rid);
     }
     
     int sizeOfFile = handle.currentPageNum;
@@ -261,7 +261,7 @@ int findOpenSlot(FileHandle &handle, int size, RID &rid) {
             void *_tempPage = malloc(PAGE_SIZE); 
             handle.readPage(i, _tempPage);
             rid.pageNum = i;
-            retVal = scanSlotDirectoryForFreeSpace(_tempPage, rid);  
+            retVal = getFreeSpaceOffset(_tempPage, rid);  
             free(_tempPage);
             break;
         }
@@ -271,22 +271,32 @@ int findOpenSlot(FileHandle &handle, int size, RID &rid) {
 }
 
 
-int scanSlotDirectoryForFreeSpace(const void *data, RID &rid) {
+int getFreeSpaceOffset(const void *data, RID &rid) {
     // here we just need to add up all the lengths of the records and that will
     // give us the offset for the record.  We also need to add a new slot directory entry
     int numRecords;
     memcpy(&numRecords, (char *) data + N_OFFSET, sizeof(int));
     rid.slotNum = numRecords; 
     
-    int newOffset = 0;
-    int slotOffset = PAGE_SIZE - ((numRecords * SLOT_SIZE) + SLOT_SIZE);
+    int lengthOfRecord = 0;
+    int lastRecordOffset = 0;
+    
+    // lets move our pointer to the last directory slot and extract the
+    // record offset and length and them up and return it to the caller
+    int slotOffset = PAGE_SIZE - ((numRecords * SLOT_SIZE) + META_INFO);
+    memcpy(&lastRecordOffset, (char *) data + slotOffset, sizeof(int));
+    memcpy(&lengthOfRecord, (char *) data + slotOffset + sizeof(int), sizeof(int)); 
+    return lastRecordOffset + lengthOfRecord; 
+    //int slotOffset = PAGE_SIZE - ((numRecords * SLOT_SIZE) + SLOT_SIZE);
+
+    /*
     for (int i = 0; i < numRecords; i++) {
         int _temp;
         memcpy(&_temp, (char *) data + slotOffset + sizeof(int), sizeof(int));
         newOffset += _temp;
         slotOffset += SLOT_SIZE;
-    }
-    return newOffset;
+    } */
+    //return newOffset;
 }
 
 void setUpNewPage(const void *newPage, const void *data, int length, FileHandle &handle) {
