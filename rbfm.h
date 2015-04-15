@@ -43,7 +43,7 @@ struct Attribute {
 };
 
 // function declarations
-bool isFieldNull(const void *data, int bytes, int i);
+bool isFieldNull(const void *data,  int i);
 std::string extractType(const void *data, int *offset, AttrType t, AttrLength l);
 int getRecordSize(const void *data, const vector<Attribute> &descriptor);
 void getSlotFile(int slotNum, const void *page, int *offset, int *length);
