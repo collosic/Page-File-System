@@ -220,7 +220,7 @@ int getRecordSize(const void *data, const vector<Attribute> &descriptor) {
 
 void getSlotFile(int slotNum, const void *page, int *offset, int *length) {
     // first lets get the slot offset 
-    int location = PAGE_SIZE - (((slotNum + 1) * SLOT_SIZE) + SLOT_SIZE);
+    int location = PAGE_SIZE - (((slotNum + 1) * SLOT_SIZE) + META_INFO);
     memcpy(offset, (char *) page + location, sizeof(int)); 
     memcpy(length, (char *) page + location + sizeof(int), sizeof(int));
 }
@@ -249,10 +249,6 @@ int findOpenSlot(FileHandle &handle, int size, RID &rid) {
     
     // we only need to test the pages upto the current one, since we already tested it.
     for (int i = 0; i < sizeOfFile; i++) {
-        //handle.readPage(i, _tempPage);
-         
-        // extract the free space and compare to the size of the new record
-        //memcpy(&freeSpace, (char *) _tempPage + F_OFFSET, sizeof(int));
         freeSpace = handle.freeSpace[i];
         // if the free space is big enough to accomodate the new record then stick it in.
         if (freeSpace > (size + SLOT_SIZE)) {
